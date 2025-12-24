@@ -39,24 +39,36 @@ class JoystickCameraCard extends LitElement {
     }
 
     static get styles() {
-        return css`
-            :host { display: block; }
-            .card-content { 
-                padding: 10px; 
-                display: flex; 
-                justify-content: center; /* On centre le rectangle dans sa moitié de carte */
-                background: none; 
-            }
-            .base {
-                width: 140px; height: 200px; border-radius: 30px; position: relative;
-                background: #000; border: 4px solid #333;
-                background-image: repeating-linear-gradient(45deg, #111 0px, #111 2px, #000 2px, #000 10px);
-                box-shadow: inset 0 0 25px rgba(0,0,0,1); touch-action: none;
-                display: flex; justify-content: center; align-items: center;
-            }
-            /* ... reste du code handle ... */
-        `;
-    }
+            return css`
+                :host { display: block; }
+                .card-content { 
+                    padding: 10px; 
+                    display: flex; 
+                    justify-content: center; 
+                    background: none; 
+                }
+                .base {
+                    width: 140px; height: 200px; border-radius: 30px; 
+                    position: relative; /* Indispensable pour que handle se place par rapport à lui */
+                    background: #000; border: 4px solid #333;
+                    background-image: repeating-linear-gradient(45deg, #111 0px, #111 2px, #000 2px, #000 10px);
+                    box-shadow: inset 0 0 25px rgba(0,0,0,1); 
+                    touch-action: none;
+                    display: flex; justify-content: center; align-items: center;
+                    overflow: visible; /* Permet à la bille de ne pas être coupée */
+                    z-index: 1;
+                }
+                .handle {
+                    width: 70px; height: 70px; border-radius: 50%; 
+                    position: absolute; /* Place la bille sur la base */
+                    background: radial-gradient(circle at 50% 15%, #03a9f4 0%, #0288d1 60%, #01579b 100%);
+                    box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 5px 10px rgba(0,0,0,0.5);
+                    cursor: grab;
+                    transition: transform 0.1s ease-out;
+                    z-index: 999; /* Force la bille au PREMIER PLAN */
+                }
+            `;
+        }
 
 
     
