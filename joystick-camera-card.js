@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.0.9 - TAILLE +10% ET ALIGNEMENT DROITE (POUR ESPACE CENTRAL)
+// V1.1.0 - ASPECT SOUFFLET (CONCENTRIQUE) ET TAILLE +10%
 // =========================================================================
 
 import {
@@ -23,16 +23,11 @@ class JoystickCameraCard extends LitElement {
 
     constructor() {
         super();
-        // Dimensions augmentées de 10% (Ancien: 220x150 -> Nouveau: 242x165)
         this.baseWidth = 242; 
         this.baseHeight = 165;
-        this.handleSize = 72; // Ancien 65 + 10% ≈ 72
+        this.handleSize = 72; 
         this.borderWidth = 4; 
         
-        // Rayon extérieur recalculé (Rayon bille + bordure)
-        this.externalRadius = (this.handleSize / 2) + this.borderWidth; // 36 + 4 = 40px
-        
-        // Limites de mouvement pour contact parfait
         this.limitX = (this.baseWidth - (this.borderWidth * 2) - this.handleSize) / 2;
         this.limitY = (this.baseHeight - (this.borderWidth * 2) - this.handleSize) / 2;
         
@@ -53,11 +48,11 @@ class JoystickCameraCard extends LitElement {
                 border: none !important;
                 box-shadow: none !important;
                 display: flex;
-                justify-content: flex-end; /* ALIGNÉ À DROITE */
+                justify-content: flex-end;
                 align-items: center;
             }
             .card-content { 
-                padding: 10px 10px 10px 0px; /* Marges : Haut, Droite (10), Bas, Gauche (0) */
+                padding: 10px 10px 10px 0px; 
                 display: flex; 
                 justify-content: flex-end; 
                 background: none; 
@@ -70,8 +65,17 @@ class JoystickCameraCard extends LitElement {
                 background: #000; 
                 border: 4px solid #333;
                 box-sizing: border-box;
-                background-image: repeating-linear-gradient(45deg, #111 0px, #111 2px, #000 2px, #000 10px);
-                box-shadow: inset 0 0 25px rgba(0,0,0,1); 
+                /* EFFET SOUFFLET : Superposition de dégradés pour simuler les plis */
+                background-image: 
+                    repeating-linear-gradient(45deg, #111 0px, #111 2px, transparent 2px, transparent 10px),
+                    radial-gradient(circle, transparent 30%, rgba(0,0,0,0.8) 100%),
+                    repeating-radial-gradient(circle at center, #222 0px, #222 10px, #0a0a0a 12px, #000 15px);
+                
+                /* Profondeur du boîtier */
+                box-shadow: 
+                    inset 0 0 30px rgba(0,0,0,1),
+                    inset 0 0 10px rgba(0,0,0,0.8);
+                
                 touch-action: none;
                 display: flex; 
                 justify-content: center; 
@@ -86,8 +90,8 @@ class JoystickCameraCard extends LitElement {
                 position: absolute;
                 top: 50%;
                 left: 50%;
-                margin-top: -36px; /* - handleSize / 2 */
-                margin-left: -36px; /* - handleSize / 2 */
+                margin-top: -36px;
+                margin-left: -36px;
                 background: radial-gradient(circle at 50% 15%, #03a9f4 0%, #0288d1 60%, #01579b 100%);
                 box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 5px 10px rgba(0,0,0,0.5);
                 z-index: 999;
