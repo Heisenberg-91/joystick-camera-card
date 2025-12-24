@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.0.7 - EMBOÎTEMENT PARFAIT (Calcul Rayon Bille + Bordure)
+// V1.0.8 - CONTACT PARFAIT (Zéro Gap)
 // =========================================================================
 
 import {
@@ -26,16 +26,19 @@ class JoystickCameraCard extends LitElement {
         this.baseWidth = 220; 
         this.baseHeight = 150;
         this.handleSize = 65; 
-        this.borderWidth = 4; // Épaisseur de la bordure grise
+        this.borderWidth = 4; 
         
-        // --- LE CALCUL CRUCIAL ---
-        // Pour que l'intérieur épouse une bille de rayon R, 
-        // l'extérieur doit avoir un radius de (R + épaisseur bordure).
-        this.externalRadius = (this.handleSize / 2) + this.borderWidth; // 32.5 + 4 = 36.5px
+        // Rayon extérieur pour l'arrondi (R bille + épaisseur bordure)
+        this.externalRadius = (this.handleSize / 2) + this.borderWidth; 
         
-        // Limites de mouvement pour que le centre de la bille s'arrête pile au bon endroit
-        this.limitX = (this.baseWidth / 2) - (this.handleSize / 2) - this.borderWidth;
-        this.limitY = (this.baseHeight / 2) - (this.handleSize / 2) - this.borderWidth;
+        // --- CORRECTION DU CONTACT ---
+        // On ne retire plus de pixel de sécurité. 
+        // La limite est strictement la moitié de la zone interne disponible.
+        const innerWidth = this.baseWidth - (this.borderWidth * 2);
+        const innerHeight = this.baseHeight - (this.borderWidth * 2);
+        
+        this.limitX = (innerWidth - this.handleSize) / 2;
+        this.limitY = (innerHeight - this.handleSize) / 2;
         
         this.x = 0;
         this.y = 0;
@@ -55,11 +58,10 @@ class JoystickCameraCard extends LitElement {
             .base {
                 width: 220px; 
                 height: 150px; 
-                /* Rayon corrigé pour l'alignement intérieur */
                 border-radius: 36.5px; 
                 position: relative;
                 background: #000; 
-                border: 4px solid #333;
+                border: 4px solid #333; /* Notre ligne grise */
                 background-image: repeating-linear-gradient(45deg, #111 0px, #111 2px, #000 2px, #000 10px);
                 box-shadow: inset 0 0 25px rgba(0,0,0,1); 
                 touch-action: none;
@@ -67,7 +69,7 @@ class JoystickCameraCard extends LitElement {
                 justify-content: center; 
                 align-items: center;
                 z-index: 1;
-                overflow: hidden;
+                overflow: hidden; /* Important pour que la bille semble s'enfoncer dans le bord */
             }
             .handle {
                 width: 65px; 
