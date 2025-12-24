@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.0.8 - CONTACT PARFAIT (Zéro Gap)
+// V1.0.9 - CONTACT PHYSIQUE TOTAL (Zéro Gap Horizontal & Vertical)
 // =========================================================================
 
 import {
@@ -28,17 +28,11 @@ class JoystickCameraCard extends LitElement {
         this.handleSize = 65; 
         this.borderWidth = 4; 
         
-        // Rayon extérieur pour l'arrondi (R bille + épaisseur bordure)
-        this.externalRadius = (this.handleSize / 2) + this.borderWidth; 
-        
-        // --- CORRECTION DU CONTACT ---
-        // On ne retire plus de pixel de sécurité. 
-        // La limite est strictement la moitié de la zone interne disponible.
-        const innerWidth = this.baseWidth - (this.borderWidth * 2);
-        const innerHeight = this.baseHeight - (this.borderWidth * 2);
-        
-        this.limitX = (innerWidth - this.handleSize) / 2;
-        this.limitY = (innerHeight - this.handleSize) / 2;
+        // --- CALCUL DES LIMITES SANS MARGE D'ERREUR ---
+        // Zone interne réelle : (Largeur Totale - 2x Bordure)
+        // Distance max du centre au bord pour la bille : (Zone Interne - Taille Bille) / 2
+        this.limitX = (this.baseWidth - (this.borderWidth * 2) - this.handleSize) / 2;
+        this.limitY = (this.baseHeight - (this.borderWidth * 2) - this.handleSize) / 2;
         
         this.x = 0;
         this.y = 0;
@@ -61,7 +55,8 @@ class JoystickCameraCard extends LitElement {
                 border-radius: 36.5px; 
                 position: relative;
                 background: #000; 
-                border: 4px solid #333; /* Notre ligne grise */
+                border: 4px solid #333;
+                box-sizing: border-box; /* Force le navigateur à inclure la bordure dans les 220x150 */
                 background-image: repeating-linear-gradient(45deg, #111 0px, #111 2px, #000 2px, #000 10px);
                 box-shadow: inset 0 0 25px rgba(0,0,0,1); 
                 touch-action: none;
@@ -69,13 +64,18 @@ class JoystickCameraCard extends LitElement {
                 justify-content: center; 
                 align-items: center;
                 z-index: 1;
-                overflow: hidden; /* Important pour que la bille semble s'enfoncer dans le bord */
+                overflow: hidden;
             }
             .handle {
                 width: 65px; 
                 height: 65px; 
                 border-radius: 50%; 
                 position: absolute;
+                /* On s'assure que le point de départ est le centre exact */
+                top: 50%;
+                left: 50%;
+                margin-top: -32.5px; /* - handleSize / 2 */
+                margin-left: -32.5px; /* - handleSize / 2 */
                 background: radial-gradient(circle at 50% 15%, #03a9f4 0%, #0288d1 60%, #01579b 100%);
                 box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 5px 10px rgba(0,0,0,0.5);
                 z-index: 999;
@@ -122,12 +122,14 @@ class JoystickCameraCard extends LitElement {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
+            // Calcul par rapport au centre du rectangle gris
             let dx = clientX - (rect.left + rect.width / 2);
             let dy = clientY - (rect.top + rect.height / 2);
 
             this.x = Math.max(-this.limitX, Math.min(this.limitX, dx));
             this.y = Math.max(-this.limitY, Math.min(this.limitY, dy));
 
+            // Conversion précise en %
             const panPerc = Math.round((this.x / this.limitX) * 100);
             const tiltPerc = Math.round((-this.y / this.limitY) * 100);
 
