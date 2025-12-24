@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.0.5 - JOYSTICK D'OBSERVATION (COINS ÉPOUSANT LA BILLE)
+// V1.0.7 - EMBOÎTEMENT PARFAIT (Calcul Rayon Bille + Bordure)
 // =========================================================================
 
 import {
@@ -26,13 +26,16 @@ class JoystickCameraCard extends LitElement {
         this.baseWidth = 220; 
         this.baseHeight = 150;
         this.handleSize = 65; 
+        this.borderWidth = 4; // Épaisseur de la bordure grise
         
-        // Rayon de la bille pour le border-radius parfait
-        this.borderRadius = this.handleSize / 2; // 32.5px
+        // --- LE CALCUL CRUCIAL ---
+        // Pour que l'intérieur épouse une bille de rayon R, 
+        // l'extérieur doit avoir un radius de (R + épaisseur bordure).
+        this.externalRadius = (this.handleSize / 2) + this.borderWidth; // 32.5 + 4 = 36.5px
         
-        // Limites de mouvement (ajustées pour la bordure de 4px)
-        this.limitX = (this.baseWidth / 2) - (this.handleSize / 2) - 4;
-        this.limitY = (this.baseHeight / 2) - (this.handleSize / 2) - 4;
+        // Limites de mouvement pour que le centre de la bille s'arrête pile au bon endroit
+        this.limitX = (this.baseWidth / 2) - (this.handleSize / 2) - this.borderWidth;
+        this.limitY = (this.baseHeight / 2) - (this.handleSize / 2) - this.borderWidth;
         
         this.x = 0;
         this.y = 0;
@@ -52,8 +55,8 @@ class JoystickCameraCard extends LitElement {
             .base {
                 width: 220px; 
                 height: 150px; 
-                /* Rayon identique au rayon de la bille */
-                border-radius: 32.5px; 
+                /* Rayon corrigé pour l'alignement intérieur */
+                border-radius: 36.5px; 
                 position: relative;
                 background: #000; 
                 border: 4px solid #333;
