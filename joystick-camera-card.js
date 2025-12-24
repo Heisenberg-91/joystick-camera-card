@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.1.0 - ASPECT SOUFFLET (CONCENTRIQUE) ET TAILLE +10%
+// V1.1.1 - SOUFFLET PUR (SANS HACHURAGE)
 // =========================================================================
 
 import {
@@ -65,13 +65,12 @@ class JoystickCameraCard extends LitElement {
                 background: #000; 
                 border: 4px solid #333;
                 box-sizing: border-box;
-                /* EFFET SOUFFLET : Superposition de dégradés pour simuler les plis */
+                
+                /* EFFET SOUFFLET PUR : Cercles concentriques uniquement */
                 background-image: 
-                    repeating-linear-gradient(45deg, #111 0px, #111 2px, transparent 2px, transparent 10px),
                     radial-gradient(circle, transparent 30%, rgba(0,0,0,0.8) 100%),
                     repeating-radial-gradient(circle at center, #222 0px, #222 10px, #0a0a0a 12px, #000 15px);
                 
-                /* Profondeur du boîtier */
                 box-shadow: 
                     inset 0 0 30px rgba(0,0,0,1),
                     inset 0 0 10px rgba(0,0,0,0.8);
