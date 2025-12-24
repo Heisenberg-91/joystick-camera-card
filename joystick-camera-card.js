@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.0.9 - CONTACT PHYSIQUE TOTAL (Zéro Gap Horizontal & Vertical)
+// V1.0.9 - TAILLE +10% ET ALIGNEMENT DROITE (POUR ESPACE CENTRAL)
 // =========================================================================
 
 import {
@@ -23,14 +23,16 @@ class JoystickCameraCard extends LitElement {
 
     constructor() {
         super();
-        this.baseWidth = 220; 
-        this.baseHeight = 150;
-        this.handleSize = 65; 
+        // Dimensions augmentées de 10% (Ancien: 220x150 -> Nouveau: 242x165)
+        this.baseWidth = 242; 
+        this.baseHeight = 165;
+        this.handleSize = 72; // Ancien 65 + 10% ≈ 72
         this.borderWidth = 4; 
         
-        // --- CALCUL DES LIMITES SANS MARGE D'ERREUR ---
-        // Zone interne réelle : (Largeur Totale - 2x Bordure)
-        // Distance max du centre au bord pour la bille : (Zone Interne - Taille Bille) / 2
+        // Rayon extérieur recalculé (Rayon bille + bordure)
+        this.externalRadius = (this.handleSize / 2) + this.borderWidth; // 36 + 4 = 40px
+        
+        // Limites de mouvement pour contact parfait
         this.limitX = (this.baseWidth - (this.borderWidth * 2) - this.handleSize) / 2;
         this.limitY = (this.baseHeight - (this.borderWidth * 2) - this.handleSize) / 2;
         
@@ -42,21 +44,32 @@ class JoystickCameraCard extends LitElement {
 
     static get styles() {
         return css`
-            :host { display: block; }
+            :host { 
+                display: block; 
+                background: none !important; 
+            }
+            ha-card {
+                background: none !important;
+                border: none !important;
+                box-shadow: none !important;
+                display: flex;
+                justify-content: flex-end; /* ALIGNÉ À DROITE */
+                align-items: center;
+            }
             .card-content { 
-                padding: 10px; 
+                padding: 10px 10px 10px 0px; /* Marges : Haut, Droite (10), Bas, Gauche (0) */
                 display: flex; 
-                justify-content: center; 
+                justify-content: flex-end; 
                 background: none; 
             }
             .base {
-                width: 220px; 
-                height: 150px; 
-                border-radius: 36.5px; 
+                width: 242px; 
+                height: 165px; 
+                border-radius: 40px; 
                 position: relative;
                 background: #000; 
                 border: 4px solid #333;
-                box-sizing: border-box; /* Force le navigateur à inclure la bordure dans les 220x150 */
+                box-sizing: border-box;
                 background-image: repeating-linear-gradient(45deg, #111 0px, #111 2px, #000 2px, #000 10px);
                 box-shadow: inset 0 0 25px rgba(0,0,0,1); 
                 touch-action: none;
@@ -67,15 +80,14 @@ class JoystickCameraCard extends LitElement {
                 overflow: hidden;
             }
             .handle {
-                width: 65px; 
-                height: 65px; 
+                width: 72px; 
+                height: 72px; 
                 border-radius: 50%; 
                 position: absolute;
-                /* On s'assure que le point de départ est le centre exact */
                 top: 50%;
                 left: 50%;
-                margin-top: -32.5px; /* - handleSize / 2 */
-                margin-left: -32.5px; /* - handleSize / 2 */
+                margin-top: -36px; /* - handleSize / 2 */
+                margin-left: -36px; /* - handleSize / 2 */
                 background: radial-gradient(circle at 50% 15%, #03a9f4 0%, #0288d1 60%, #01579b 100%);
                 box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 5px 10px rgba(0,0,0,0.5);
                 z-index: 999;
@@ -87,7 +99,7 @@ class JoystickCameraCard extends LitElement {
 
     render() {
         return html`
-            <ha-card style="background: none; border: none; box-shadow: none;">
+            <ha-card>
                 <div class="card-content">
                     <div id="camera-base" class="base">
                         <div id="camera-handle" class="handle" 
@@ -122,14 +134,12 @@ class JoystickCameraCard extends LitElement {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
-            // Calcul par rapport au centre du rectangle gris
             let dx = clientX - (rect.left + rect.width / 2);
             let dy = clientY - (rect.top + rect.height / 2);
 
             this.x = Math.max(-this.limitX, Math.min(this.limitX, dx));
             this.y = Math.max(-this.limitY, Math.min(this.limitY, dy));
 
-            // Conversion précise en %
             const panPerc = Math.round((this.x / this.limitX) * 100);
             const tiltPerc = Math.round((-this.y / this.limitY) * 100);
 
