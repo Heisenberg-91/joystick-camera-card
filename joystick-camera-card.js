@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.1.1 - SOUFFLET PUR (SANS HACHURAGE)
+// V1.1.4 - LARGEUR RÉDUITE (-15%) / HAUTEUR CONSERVÉE
 // =========================================================================
 
 import {
@@ -23,11 +23,13 @@ class JoystickCameraCard extends LitElement {
 
     constructor() {
         super();
-        this.baseWidth = 242; 
+        // Dimensions : Largeur réduite à 206px (-15%), Hauteur maintenue à 165px
+        this.baseWidth = 206; 
         this.baseHeight = 165;
         this.handleSize = 72; 
         this.borderWidth = 4; 
         
+        // Calcul des limites de mouvement (Contact Parfait)
         this.limitX = (this.baseWidth - (this.borderWidth * 2) - this.handleSize) / 2;
         this.limitY = (this.baseHeight - (this.borderWidth * 2) - this.handleSize) / 2;
         
@@ -41,7 +43,7 @@ class JoystickCameraCard extends LitElement {
         return css`
             :host { 
                 display: block; 
-                background: none !important; 
+                background: none !important;
             }
             ha-card {
                 background: none !important;
@@ -52,29 +54,24 @@ class JoystickCameraCard extends LitElement {
                 align-items: center;
             }
             .card-content { 
-                padding: 10px 10px 10px 0px; 
+                padding: 10px; 
                 display: flex; 
                 justify-content: flex-end; 
-                background: none; 
+                background: none;
             }
             .base {
-                width: 242px; 
+                width: 206px; 
                 height: 165px; 
                 border-radius: 40px; 
                 position: relative;
                 background: #000; 
                 border: 4px solid #333;
                 box-sizing: border-box;
-                
-                /* EFFET SOUFFLET PUR : Cercles concentriques uniquement */
+                /* Aspect Soufflet Pur */
                 background-image: 
                     radial-gradient(circle, transparent 30%, rgba(0,0,0,0.8) 100%),
                     repeating-radial-gradient(circle at center, #222 0px, #222 10px, #0a0a0a 12px, #000 15px);
-                
-                box-shadow: 
-                    inset 0 0 30px rgba(0,0,0,1),
-                    inset 0 0 10px rgba(0,0,0,0.8);
-                
+                box-shadow: inset 0 0 30px rgba(0,0,0,1), inset 0 0 10px rgba(0,0,0,0.8);
                 touch-action: none;
                 display: flex; 
                 justify-content: center; 
