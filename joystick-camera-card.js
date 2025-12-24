@@ -41,26 +41,25 @@ class JoystickCameraCard extends LitElement {
     static get styles() {
         return css`
             :host { display: block; }
-            .card-content { padding: 10px; display: flex; justify-content: flex-end; background: none; }
+            .card-content { 
+                padding: 10px; 
+                display: flex; 
+                justify-content: center; /* On centre le rectangle dans sa moitié de carte */
+                background: none; 
+            }
             .base {
                 width: 140px; height: 200px; border-radius: 30px; position: relative;
                 background: #000; border: 4px solid #333;
-                /* Texture identique à ton premier stick mais adaptée au rectangle */
                 background-image: repeating-linear-gradient(45deg, #111 0px, #111 2px, #000 2px, #000 10px);
                 box-shadow: inset 0 0 25px rgba(0,0,0,1); touch-action: none;
                 display: flex; justify-content: center; align-items: center;
             }
-            .handle {
-                width: 70px; height: 70px; border-radius: 50%; position: absolute;
-                /* Style identique au premier stick (Bleu) */
-                background: radial-gradient(circle at 50% 15%, #03a9f4 0%, #0288d1 60%, #01579b 100%);
-                box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 5px 10px rgba(0,0,0,0.5);
-                z-index: 10; cursor: grab;
-                transition: transform 0.1s ease-out;
-            }
+            /* ... reste du code handle ... */
         `;
     }
 
+
+    
     render() {
         return html`
             <ha-card style="background: none; border: none; box-shadow: none;">
