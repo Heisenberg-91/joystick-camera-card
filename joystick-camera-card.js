@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.2.0 - Joystick Pan & Tilt via Number Entities (Sans API dédiée)
+// V1.2.1 - Joystick Pan & Tilt calibré pour 175° (Centre à 87°)
 // =========================================================================
 
 import {
@@ -12,10 +12,9 @@ class JoystickCameraCard extends LitElement {
     
     setConfig(config) { 
         this.config = config; 
-        // Les IDs des entités créées par ESPHome (souvent basées sur le nom du noeud)
-        // Par défaut, on suppose number.camera_pan et number.camera_tilt
-        this.panEntity = config.pan_entity || 'number.camera_pan';
-        this.tiltEntity = config.tilt_entity || 'number.camera_tilt';
+        // Correspondance avec tes entités ESPHome
+        this.panEntity = config.pan_entity || 'number.camera_pan_175';
+        this.tiltEntity = config.tilt_entity || 'number.camera_tilt_175';
     }
 
     static get properties() {
@@ -39,36 +38,28 @@ class JoystickCameraCard extends LitElement {
         this.y = 0;
         this.isDragging = false;
         this.lastSend = 0;
+        
+        // --- Paramètres de calibration ---
+        this.centerAngle = 87; // Le point central défini dans ton YAML
+        this.maxRange = 87;    // Débattement max de chaque côté (87 + 87 = 174°)
     }
 
     static get styles() {
         return css`
-            :host { display: block; background: none !important; }
-            ha-card {
-                background: none !important;
-                border: none !important;
-                box-shadow: none !important;
-                display: flex;
-                justify-content: flex-end;
-                align-items: center;
-            }
+            ha-card { background: none !important; border: none !important; box-shadow: none !important; display: flex; justify-content: flex-end; align-items: center; }
             .card-content { padding: 10px; display: flex; justify-content: flex-end; background: none; }
             .base {
                 width: 206px; height: 165px; border-radius: 40px; position: relative;
                 background: #000; border: 4px solid #333; box-sizing: border-box;
-                background-image: 
-                    radial-gradient(circle, transparent 30%, rgba(0,0,0,0.8) 100%),
-                    repeating-radial-gradient(circle at center, #222 0px, #222 10px, #0a0a0a 12px, #000 15px);
-                box-shadow: inset 0 0 30px rgba(0,0,0,1), inset 0 0 10px rgba(0,0,0,0.8);
+                background-image: radial-gradient(circle, transparent 30%, rgba(0,0,0,0.8) 100%), repeating-radial-gradient(circle at center, #222 0px, #222 10px, #0a0a0a 12px, #000 15px);
                 touch-action: none; display: flex; justify-content: center; align-items: center;
-                z-index: 1; overflow: hidden;
             }
             .handle {
                 width: 72px; height: 72px; border-radius: 50%; position: absolute;
                 top: 50%; left: 50%; margin-top: -36px; margin-left: -36px;
                 background: radial-gradient(circle at 50% 15%, #03a9f4 0%, #0288d1 60%, #01579b 100%);
                 box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 5px 10px rgba(0,0,0,0.5);
-                z-index: 999; cursor: grab; transition: transform 0.1s ease-out;
+                cursor: grab; transition: transform 0.1s ease-out;
             }
         `;
     }
@@ -101,7 +92,7 @@ class JoystickCameraCard extends LitElement {
             this.isDragging = false;
             h.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
             this.x = 0; this.y = 0; 
-            this.sendCameraCommands(0, 0);
+            this.sendCameraCommands(this.centerAngle, this.centerAngle); // Retour au centre 87°
         };
 
         const move = (e) => {
@@ -109,15 +100,21 @@ class JoystickCameraCard extends LitElement {
             const rect = this.baseElement.getBoundingClientRect();
             const clientX = (e.touches ? e.touches[0].clientX : e.clientX);
             const clientY = (e.touches ? e.touches[0].clientY : e.clientY);
+            
             let dx = clientX - (rect.left + rect.width / 2);
             let dy = clientY - (rect.top + rect.height / 2);
+            
             this.x = Math.max(-this.limitX, Math.min(this.limitX, dx));
             this.y = Math.max(-this.limitY, Math.min(this.limitY, dy));
-            const panPerc = Math.round((this.x / this.limitX) * 100);
-            const tiltPerc = Math.round((-this.y / this.limitY) * 100);
+
+            // Calcul de l'angle (Mapping joystick -100/100 vers 0-175)
+            // L'angle = centre (87) + (pourcentage joystick * débattement max)
+            const panAngle = Math.round(this.centerAngle + ((this.x / this.limitX) * this.maxRange));
+            const tiltAngle = Math.round(this.centerAngle + ((-this.y / this.limitY) * this.maxRange));
+
             const now = Date.now();
-            if (now - this.lastSend > 80) { // On réduit un peu la fréquence pour Home Assistant (80ms)
-                this.sendCameraCommands(panPerc, tiltPerc); 
+            if (now - this.lastSend > 100) { // On passe à 100ms pour être synchro avec le delay du servo
+                this.sendCameraCommands(panAngle, tiltAngle); 
                 this.lastSend = now; 
             }
         };
@@ -127,16 +124,18 @@ class JoystickCameraCard extends LitElement {
         document.addEventListener('mouseup', end); document.addEventListener('touchend', end);
     }
 
-    sendCameraCommands(pan, tilt) {
+    sendCameraCommands(panValue, tiltValue) {
         if (!this.hass) return;
     
-        // On envoie directement la valeur du joystick mappée sur 135
-        // pan (joystick) va de -100 à 100, on le multiplie par 1.35
-        const panAngle = Math.round(pan * 1.35);
-    
+        // Envoi des valeurs absolues (0-175)
         this.hass.callService('number', 'set_value', {
             entity_id: this.panEntity,
-            value: panAngle
+            value: panValue
+        });
+
+        this.hass.callService('number', 'set_value', {
+            entity_id: this.tiltEntity,
+            value: tiltValue
         });
     }
 }
