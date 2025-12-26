@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.2.6 - Joystick Carré 1:1 - Aspect Soufflet & Stick Concave
+// V1.2.7 - Joystick Carré 1:1 - Aspect Soufflet & Stick Concave
 // =========================================================================
 
 import {
@@ -91,4 +91,60 @@ class JoystickCameraCard extends LitElement {
         return html`
             <ha-card>
                 <div id="camera-base" class="base">
-                    <div id="camera-handle" class
+                    <div id="camera-handle" class="handle" 
+                         style="transform: translate(${this.x}px, ${this.y}px);">
+                    </div>
+                </div>
+            </ha-card>
+        `;
+    }
+
+    firstUpdated() {
+        this.baseElement = this.shadowRoot.querySelector('#camera-base');
+        this.handleElement = this.shadowRoot.querySelector('#camera-handle');
+        this._addListeners();
+    }
+
+    _addListeners() {
+        const h = this.handleElement;
+        const start = (e) => { e.preventDefault(); this.isDragging = true; h.style.transition = 'none'; };
+        const end = () => { 
+            if (!this.isDragging) return; 
+            this.isDragging = false;
+            h.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            this.x = 0; this.y = 0; 
+            this.sendCameraCommands(this.centerAngle, this.centerAngle);
+        };
+
+        const move = (e) => {
+            if (!this.isDragging) return;
+            const rect = this.baseElement.getBoundingClientRect();
+            const clientX = (e.touches ? e.touches[0].clientX : e.clientX);
+            const clientY = (e.touches ? e.touches[0].clientY : e.clientY);
+            let dx = clientX - (rect.left + rect.width / 2);
+            let dy = clientY - (rect.top + rect.height / 2);
+            this.x = Math.max(-this.limit, Math.min(this.limit, dx));
+            this.y = Math.max(-this.limit, Math.min(this.limit, dy));
+
+            const panAngle = Math.round(this.centerAngle + ((this.x / this.limit) * this.maxRange));
+            const tiltAngle = Math.round(this.centerAngle + ((-this.y / this.limit) * this.maxRange));
+
+            const now = Date.now();
+            if (now - this.lastSend > 90) { 
+                this.sendCameraCommands(panAngle, tiltAngle); 
+                this.lastSend = now; 
+            }
+        };
+
+        h.addEventListener('mousedown', start); h.addEventListener('touchstart', start);
+        document.addEventListener('mousemove', move); document.addEventListener('touchmove', move);
+        document.addEventListener('mouseup', end); document.addEventListener('touchend', end);
+    }
+
+    sendCameraCommands(pan, tilt) {
+        if (!this.hass) return;
+        this.hass.callService('number', 'set_value', { entity_id: this.panEntity, value: pan });
+        this.hass.callService('number', 'set_value', { entity_id: this.tiltEntity, value: tilt });
+    }
+}
+customElements.define('joystick-camera-card', JoystickCameraCard);
