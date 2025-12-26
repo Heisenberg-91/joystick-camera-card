@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.1.4 - LARGEUR RÉDUITE (-15%) / HAUTEUR CONSERVÉE
+// V1.1.5 - Joystick Pan & Tilt pour caméra (Service ESPHome intégré)
 // =========================================================================
 
 import {
@@ -10,7 +10,11 @@ import {
 
 class JoystickCameraCard extends LitElement {
     
-    setConfig(config) { this.config = config; }
+    setConfig(config) { 
+        this.config = config; 
+        // Nom du noeud ESPHome dans Home Assistant (par défaut 'rover_heisenberg')
+        this.deviceName = config.device_name || 'rover_heisenberg';
+    }
 
     static get properties() {
         return {
@@ -119,45 +123,3 @@ class JoystickCameraCard extends LitElement {
 
     _addListeners() {
         const h = this.handleElement;
-        const start = (e) => { e.preventDefault(); this.isDragging = true; h.style.transition = 'none'; };
-        const end = () => { 
-            if (!this.isDragging) return; 
-            this.isDragging = false;
-            h.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-            this.x = 0; this.y = 0; 
-            this.sendCameraCommands(0, 0);
-        };
-
-        const move = (e) => {
-            if (!this.isDragging) return;
-            const rect = this.baseElement.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            let dx = clientX - (rect.left + rect.width / 2);
-            let dy = clientY - (rect.top + rect.height / 2);
-
-            this.x = Math.max(-this.limitX, Math.min(this.limitX, dx));
-            this.y = Math.max(-this.limitY, Math.min(this.limitY, dy));
-
-            const panPerc = Math.round((this.x / this.limitX) * 100);
-            const tiltPerc = Math.round((-this.y / this.limitY) * 100);
-
-            const now = Date.now();
-            if (now - this.lastSend > 60) {
-                this.sendCameraCommands(panPerc, tiltPerc); 
-                this.lastSend = now; 
-            }
-        };
-
-        h.addEventListener('mousedown', start); h.addEventListener('touchstart', start);
-        document.addEventListener('mousemove', move); document.addEventListener('touchmove', move);
-        document.addEventListener('mouseup', end); document.addEventListener('touchend', end);
-    }
-
-    sendCameraCommands(pan, tilt) {
-        if (!this.hass) return;
-        console.log("Pan:", pan, "% | Tilt:", tilt, "%");
-    }
-}
-customElements.define('joystick-camera-card', JoystickCameraCard);
