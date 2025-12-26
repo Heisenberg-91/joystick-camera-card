@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.3.0 - Joystick Carré 1:1 - Bille +20% & Aspect Concave
+// V1.3.1 - Joystick Carré 1:1 - Bille concave avec bordure chromée
 // =========================================================================
 
 import {
@@ -28,13 +28,10 @@ class JoystickCameraCard extends LitElement {
         super();
         this.baseWidth = 206;  
         this.baseHeight = 206; 
-        // Diamètre augmenté de 20% (72px * 1.2 = 86px)
         this.handleSize = 86;  
         this.borderWidth = 4;  
-        
         this.limitX = (this.baseWidth - (this.borderWidth * 2) - this.handleSize) / 2;
         this.limitY = (this.baseHeight - (this.borderWidth * 2) - this.handleSize) / 2;
-        
         this.x = 0;
         this.y = 0;
         this.isDragging = false;
@@ -60,14 +57,26 @@ class JoystickCameraCard extends LitElement {
             .handle {
                 width: 86px; height: 86px; border-radius: 50%; position: absolute;
                 top: 50%; left: 50%; margin-top: -43px; margin-left: -43px;
-                /* Effet Concave : sombre au centre, clair sur les bords extérieurs */
-                background: radial-gradient(circle at center, #01579b 10%, #0288d1 80%, #03a9f4 100%);
+                
+                /* Gradient concave amélioré */
+                background: radial-gradient(circle at center, #014172 0%, #0288d1 85%, #03a9f4 100%);
+                
+                /* Finition du périmètre (Chrome/Métal effect) */
+                border: 2px solid #01579b;
                 box-shadow: 
-                    0 10px 20px rgba(0,0,0,0.8), 
-                    inset 0 8px 15px rgba(0,0,0,0.7), /* Ombre interne forte pour le creux */
-                    inset 0 -4px 10px rgba(255,255,255,0.2);
-                border: 1px solid #014172;
+                    0 12px 24px rgba(0,0,0,0.8),               /* Ombre portée globale */
+                    inset 0 10px 18px rgba(0,0,0,0.7),         /* Creux central */
+                    inset 0 0 0 2px rgba(255,255,255,0.15),    /* Reflet sur l'arête intérieure */
+                    0 0 0 1px rgba(0,0,0,0.5);                 /* Contour extérieur net */
+                
                 cursor: grab; transition: transform 0.1s ease-out;
+            }
+
+            .handle::after {
+                content: ""; position: absolute; top: 10%; left: 10%; width: 80%; height: 80%;
+                border-radius: 50%;
+                background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+                pointer-events: none;
             }
         `;
     }
