@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.3.2 - Joystick Carré 1:1 - Bille concave avec bordure chromée
+// V1.3.4 - Joystick Carré - Style Concave/Chrome
 // =========================================================================
 
 import {
@@ -26,9 +26,10 @@ class JoystickCameraCard extends LitElement {
 
     constructor() {
         super();
-        this.baseWidth = 206;  
-        this.baseHeight = 206; 
-        this.handleSize = 86;  
+        // Valeurs réduites de 3% (ex: 206 * 0.97 = ~200)
+        this.baseWidth = 200;  
+        this.baseHeight = 200; 
+        this.handleSize = 83;  
         this.borderWidth = 4;  
         this.limitX = (this.baseWidth - (this.borderWidth * 2) - this.handleSize) / 2;
         this.limitY = (this.baseHeight - (this.borderWidth * 2) - this.handleSize) / 2;
@@ -46,7 +47,7 @@ class JoystickCameraCard extends LitElement {
             .card-content { padding: 10px; display: flex; justify-content: center; background: none; }
             
             .base {
-                width: 206px; height: 206px; border-radius: 40px; position: relative;
+                width: 200px; height: 200px; border-radius: 38px; position: relative;
                 background: #000; border: 4px solid #333; box-sizing: border-box;
                 background-image: 
                     radial-gradient(circle, transparent 30%, rgba(0,0,0,0.8) 100%), 
@@ -55,19 +56,19 @@ class JoystickCameraCard extends LitElement {
             }
             
             .handle {
-                width: 86px; height: 86px; border-radius: 50%; position: absolute;
-                top: 50%; left: 50%; margin-top: -43px; margin-left: -43px;
+                width: 83px; height: 83px; border-radius: 50%; position: absolute;
+                top: 50%; left: 50%; margin-top: -41.5px; margin-left: -41.5px;
                 
-                /* Gradient concave amélioré */
+                /* Gradient concave */
                 background: radial-gradient(circle at center, #014172 0%, #0288d1 85%, #03a9f4 100%);
                 
-                /* Finition du périmètre (Chrome/Métal effect) */
+                /* Finition Chrome */
                 border: 2px solid #01579b;
                 box-shadow: 
-                    0 12px 24px rgba(0,0,0,0.8),               /* Ombre portée globale */
-                    inset 0 10px 18px rgba(0,0,0,0.7),         /* Creux central */
-                    inset 0 0 0 2px rgba(255,255,255,0.15),    /* Reflet sur l'arête intérieure */
-                    0 0 0 1px rgba(0,0,0,0.5);                 /* Contour extérieur net */
+                    0 11px 23px rgba(0,0,0,0.8),               /* Ombre portée */
+                    inset 0 9px 17px rgba(0,0,0,0.7),          /* Creux central */
+                    inset 0 0 0 2px rgba(255,255,255,0.15),    /* Reflet arête */
+                    0 0 0 1px rgba(0,0,0,0.5);                 /* Contour */
                 
                 cursor: grab; transition: transform 0.1s ease-out;
             }
