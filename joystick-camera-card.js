@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.2.1 - Joystick Pan & Tilt calibré pour 175° (Centre à 87°)
+// V1.2.4 - Joystick Symétrique 1:1 - Plage 174° (Centre 87°)
 // =========================================================================
 
 import {
@@ -12,7 +12,6 @@ class JoystickCameraCard extends LitElement {
     
     setConfig(config) { 
         this.config = config; 
-        // Correspondance avec tes entités ESPHome
         this.panEntity = config.pan_entity || 'number.camera_pan_175';
         this.tiltEntity = config.tilt_entity || 'number.camera_tilt_175';
     }
@@ -20,7 +19,6 @@ class JoystickCameraCard extends LitElement {
     static get properties() {
         return {
             hass: { type: Object },
-            config: { type: Object },
             x: { type: Number },
             y: { type: Number }
         };
@@ -28,35 +26,35 @@ class JoystickCameraCard extends LitElement {
 
     constructor() {
         super();
-        this.baseWidth = 206; 
-        this.baseHeight = 165;
-        this.handleSize = 72; 
+        // On rend la base carrée pour un ratio 1:1 parfait
+        this.size = 180; 
+        this.handleSize = 70; 
         this.borderWidth = 4; 
-        this.limitX = (this.baseWidth - (this.borderWidth * 2) - this.handleSize) / 2;
-        this.limitY = (this.baseHeight - (this.borderWidth * 2) - this.handleSize) / 2;
+        // La limite est désormais identique pour X et Y
+        this.limit = (this.size - (this.borderWidth * 2) - this.handleSize) / 2;
+        
         this.x = 0;
         this.y = 0;
         this.isDragging = false;
         this.lastSend = 0;
         
-        // --- Paramètres de calibration ---
-        this.centerAngle = 87; // Le point central défini dans ton YAML
-        this.maxRange = 87;    // Débattement max de chaque côté (87 + 87 = 174°)
+        this.centerAngle = 87; // Point central (174 / 2)
+        this.maxRange = 87;    // Débattement de 87° vers la gauche et 87° vers la droite
     }
 
     static get styles() {
         return css`
-            ha-card { background: none !important; border: none !important; box-shadow: none !important; display: flex; justify-content: flex-end; align-items: center; }
-            .card-content { padding: 10px; display: flex; justify-content: flex-end; background: none; }
+            ha-card { background: none !important; border: none !important; box-shadow: none !important; display: flex; justify-content: center; align-items: center; }
             .base {
-                width: 206px; height: 165px; border-radius: 40px; position: relative;
+                width: 180px; height: 180px; border-radius: 50%; position: relative;
                 background: #000; border: 4px solid #333; box-sizing: border-box;
-                background-image: radial-gradient(circle, transparent 30%, rgba(0,0,0,0.8) 100%), repeating-radial-gradient(circle at center, #222 0px, #222 10px, #0a0a0a 12px, #000 15px);
+                background-image: radial-gradient(circle, transparent 30%, rgba(0,0,0,0.8) 100%), 
+                                  repeating-radial-gradient(circle at center, #222 0px, #222 10px, #0a0a0a 12px, #000 15px);
                 touch-action: none; display: flex; justify-content: center; align-items: center;
             }
             .handle {
-                width: 72px; height: 72px; border-radius: 50%; position: absolute;
-                top: 50%; left: 50%; margin-top: -36px; margin-left: -36px;
+                width: 70px; height: 70px; border-radius: 50%; position: absolute;
+                top: 50%; left: 50%; margin-top: -35px; margin-left: -35px;
                 background: radial-gradient(circle at 50% 15%, #03a9f4 0%, #0288d1 60%, #01579b 100%);
                 box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 5px 10px rgba(0,0,0,0.5);
                 cursor: grab; transition: transform 0.1s ease-out;
@@ -67,11 +65,9 @@ class JoystickCameraCard extends LitElement {
     render() {
         return html`
             <ha-card>
-                <div class="card-content">
-                    <div id="camera-base" class="base">
-                        <div id="camera-handle" class="handle" 
-                             style="transform: translate(${this.x}px, ${this.y}px);">
-                        </div>
+                <div class="base" id="camera-base">
+                    <div id="camera-handle" class="handle" 
+                         style="transform: translate(${this.x}px, ${this.y}px);">
                     </div>
                 </div>
             </ha-card>
@@ -92,7 +88,7 @@ class JoystickCameraCard extends LitElement {
             this.isDragging = false;
             h.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
             this.x = 0; this.y = 0; 
-            this.sendCameraCommands(this.centerAngle, this.centerAngle); // Retour au centre 87°
+            this.sendCameraCommands(this.centerAngle, this.centerAngle);
         };
 
         const move = (e) => {
@@ -104,16 +100,22 @@ class JoystickCameraCard extends LitElement {
             let dx = clientX - (rect.left + rect.width / 2);
             let dy = clientY - (rect.top + rect.height / 2);
             
-            this.x = Math.max(-this.limitX, Math.min(this.limitX, dx));
-            this.y = Math.max(-this.limitY, Math.min(this.limitY, dy));
+            // On limite le mouvement dans un cercle (plus naturel en 1:1)
+            const distance = Math.sqrt(dx*dx + dy*dy);
+            if (distance > this.limit) {
+                dx *= this.limit / distance;
+                dy *= this.limit / distance;
+            }
 
-            // Calcul de l'angle (Mapping joystick -100/100 vers 0-175)
-            // L'angle = centre (87) + (pourcentage joystick * débattement max)
-            const panAngle = Math.round(this.centerAngle + ((this.x / this.limitX) * this.maxRange));
-            const tiltAngle = Math.round(this.centerAngle + ((-this.y / this.limitY) * this.maxRange));
+            this.x = dx;
+            this.y = dy;
+
+            // Calcul 1:1 précis : (Position / Limite) * 87° + 87° offset
+            const panAngle = Math.round(this.centerAngle + ((this.x / this.limit) * this.maxRange));
+            const tiltAngle = Math.round(this.centerAngle + ((-this.y / this.limit) * this.maxRange));
 
             const now = Date.now();
-            if (now - this.lastSend > 100) { // On passe à 100ms pour être synchro avec le delay du servo
+            if (now - this.lastSend > 100) {
                 this.sendCameraCommands(panAngle, tiltAngle); 
                 this.lastSend = now; 
             }
@@ -124,19 +126,10 @@ class JoystickCameraCard extends LitElement {
         document.addEventListener('mouseup', end); document.addEventListener('touchend', end);
     }
 
-    sendCameraCommands(panValue, tiltValue) {
+    sendCameraCommands(pan, tilt) {
         if (!this.hass) return;
-    
-        // Envoi des valeurs absolues (0-175)
-        this.hass.callService('number', 'set_value', {
-            entity_id: this.panEntity,
-            value: panValue
-        });
-
-        this.hass.callService('number', 'set_value', {
-            entity_id: this.tiltEntity,
-            value: tiltValue
-        });
+        this.hass.callService('number', 'set_value', { entity_id: this.panEntity, value: pan });
+        this.hass.callService('number', 'set_value', { entity_id: this.tiltEntity, value: tilt });
     }
 }
 customElements.define('joystick-camera-card', JoystickCameraCard);
