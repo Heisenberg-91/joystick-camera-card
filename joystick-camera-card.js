@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.1.7 - Joystick Pan & Tilt via Number Entities (Sans API dédiée)
+// V1.1.6 - Joystick Pan & Tilt via Number Entities (Sans API dédiée)
 // =========================================================================
 
 import {
@@ -100,4 +100,47 @@ class JoystickCameraCard extends LitElement {
             if (!this.isDragging) return; 
             this.isDragging = false;
             h.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-            this.x = 0; this.y = 0;
+            this.x = 0; this.y = 0; 
+            this.sendCameraCommands(0, 0);
+        };
+
+        const move = (e) => {
+            if (!this.isDragging) return;
+            const rect = this.baseElement.getBoundingClientRect();
+            const clientX = (e.touches ? e.touches[0].clientX : e.clientX);
+            const clientY = (e.touches ? e.touches[0].clientY : e.clientY);
+            let dx = clientX - (rect.left + rect.width / 2);
+            let dy = clientY - (rect.top + rect.height / 2);
+            this.x = Math.max(-this.limitX, Math.min(this.limitX, dx));
+            this.y = Math.max(-this.limitY, Math.min(this.limitY, dy));
+            const panPerc = Math.round((this.x / this.limitX) * 100);
+            const tiltPerc = Math.round((-this.y / this.limitY) * 100);
+            const now = Date.now();
+            if (now - this.lastSend > 80) { // On réduit un peu la fréquence pour Home Assistant (80ms)
+                this.sendCameraCommands(panPerc, tiltPerc); 
+                this.lastSend = now; 
+            }
+        };
+
+        h.addEventListener('mousedown', start); h.addEventListener('touchstart', start);
+        document.addEventListener('mousemove', move); document.addEventListener('touchmove', move);
+        document.addEventListener('mouseup', end); document.addEventListener('touchend', end);
+    }
+
+    sendCameraCommands(pan, tilt) {
+        if (!this.hass) return;
+
+        // On envoie la valeur au Number Pan
+        this.hass.callService('number', 'set_value', {
+            entity_id: this.panEntity,
+            value: pan
+        });
+
+        // On envoie la valeur au Number Tilt
+        this.hass.callService('number', 'set_value', {
+            entity_id: this.tiltEntity,
+            value: tilt
+        });
+    }
+}
+customElements.define('joystick-camera-card', JoystickCameraCard);
