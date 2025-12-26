@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.1.5 - Joystick Pan & Tilt pour caméra (Service ESPHome intégré)
+// V1.1.7 - Joystick Pan & Tilt via Number Entities (Sans API dédiée)
 // =========================================================================
 
 import {
@@ -12,8 +12,10 @@ class JoystickCameraCard extends LitElement {
     
     setConfig(config) { 
         this.config = config; 
-        // On définit le nom par défaut si non précisé dans la carte
-        this.deviceName = config.device_name || 'rover_heisenberg';
+        // Les IDs des entités créées par ESPHome (souvent basées sur le nom du noeud)
+        // Par défaut, on suppose number.camera_pan et number.camera_tilt
+        this.panEntity = config.pan_entity || 'number.camera_pan';
+        this.tiltEntity = config.tilt_entity || 'number.camera_tilt';
     }
 
     static get properties() {
@@ -98,39 +100,4 @@ class JoystickCameraCard extends LitElement {
             if (!this.isDragging) return; 
             this.isDragging = false;
             h.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-            this.x = 0; this.y = 0; 
-            this.sendCameraCommands(0, 0);
-        };
-
-        const move = (e) => {
-            if (!this.isDragging) return;
-            const rect = this.baseElement.getBoundingClientRect();
-            const clientX = (e.touches ? e.touches[0].clientX : e.clientX);
-            const clientY = (e.touches ? e.touches[0].clientY : e.clientY);
-            let dx = clientX - (rect.left + rect.width / 2);
-            let dy = clientY - (rect.top + rect.height / 2);
-            this.x = Math.max(-this.limitX, Math.min(this.limitX, dx));
-            this.y = Math.max(-this.limitY, Math.min(this.limitY, dy));
-            const panPerc = Math.round((this.x / this.limitX) * 100);
-            const tiltPerc = Math.round((-this.y / this.limitY) * 100);
-            const now = Date.now();
-            if (now - this.lastSend > 50) {
-                this.sendCameraCommands(panPerc, tiltPerc); 
-                this.lastSend = now; 
-            }
-        };
-
-        h.addEventListener('mousedown', start); h.addEventListener('touchstart', start);
-        document.addEventListener('mousemove', move); document.addEventListener('touchmove', move);
-        document.addEventListener('mouseup', end); document.addEventListener('touchend', end);
-    }
-
-    sendCameraCommands(pan, tilt) {
-        if (!this.hass) return;
-        this.hass.callService('esphome', `${this.deviceName}_control_camera`, {
-            pan_percent: pan,
-            tilt_percent: tilt
-        });
-    }
-}
-customElements.define('joystick-camera-card', JoystickCameraCard);
+            this.x = 0; this.y = 0;
