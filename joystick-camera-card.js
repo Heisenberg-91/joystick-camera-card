@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.2.9 - Joystick Carré 1:1 - Design Original - Plage 174° (Centre 87°)
+// V1.3.0 - Joystick Carré 1:1 - Bille +20% & Aspect Concave
 // =========================================================================
 
 import {
@@ -19,7 +19,6 @@ class JoystickCameraCard extends LitElement {
     static get properties() {
         return {
             hass: { type: Object },
-            config: { type: Object },
             x: { type: Number },
             y: { type: Number }
         };
@@ -27,13 +26,12 @@ class JoystickCameraCard extends LitElement {
 
     constructor() {
         super();
-        // Modification des proportions pour le 1:1 (Carré)
         this.baseWidth = 206;  
         this.baseHeight = 206; 
-        this.handleSize = 72;  
+        // Diamètre augmenté de 20% (72px * 1.2 = 86px)
+        this.handleSize = 86;  
         this.borderWidth = 4;  
         
-        // Les limites deviennent identiques
         this.limitX = (this.baseWidth - (this.borderWidth * 2) - this.handleSize) / 2;
         this.limitY = (this.baseHeight - (this.borderWidth * 2) - this.handleSize) / 2;
         
@@ -41,17 +39,15 @@ class JoystickCameraCard extends LitElement {
         this.y = 0;
         this.isDragging = false;
         this.lastSend = 0;
-        
-        this.centerAngle = 87; // Centre exact pour 174°
-        this.maxRange = 87;    // Débattement max
+        this.centerAngle = 87;
+        this.maxRange = 87;
     }
 
     static get styles() {
         return css`
-            ha-card { background: none !important; border: none !important; box-shadow: none !important; display: flex; justify-content: flex-end; align-items: center; }
-            .card-content { padding: 10px; display: flex; justify-content: flex-end; background: none; }
+            ha-card { background: none !important; border: none !important; box-shadow: none !important; display: flex; justify-content: center; align-items: center; }
+            .card-content { padding: 10px; display: flex; justify-content: center; background: none; }
             
-            /* Conservation de l'aspect graphique original */
             .base {
                 width: 206px; height: 206px; border-radius: 40px; position: relative;
                 background: #000; border: 4px solid #333; box-sizing: border-box;
@@ -62,10 +58,15 @@ class JoystickCameraCard extends LitElement {
             }
             
             .handle {
-                width: 72px; height: 72px; border-radius: 50%; position: absolute;
-                top: 50%; left: 50%; margin-top: -36px; margin-left: -36px;
-                background: radial-gradient(circle at 50% 15%, #03a9f4 0%, #0288d1 60%, #01579b 100%);
-                box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 5px 10px rgba(0,0,0,0.5);
+                width: 86px; height: 86px; border-radius: 50%; position: absolute;
+                top: 50%; left: 50%; margin-top: -43px; margin-left: -43px;
+                /* Effet Concave : sombre au centre, clair sur les bords extérieurs */
+                background: radial-gradient(circle at center, #01579b 10%, #0288d1 80%, #03a9f4 100%);
+                box-shadow: 
+                    0 10px 20px rgba(0,0,0,0.8), 
+                    inset 0 8px 15px rgba(0,0,0,0.7), /* Ombre interne forte pour le creux */
+                    inset 0 -4px 10px rgba(255,255,255,0.2);
+                border: 1px solid #014172;
                 cursor: grab; transition: transform 0.1s ease-out;
             }
         `;
@@ -107,19 +108,16 @@ class JoystickCameraCard extends LitElement {
             const rect = this.baseElement.getBoundingClientRect();
             const clientX = (e.touches ? e.touches[0].clientX : e.clientX);
             const clientY = (e.touches ? e.touches[0].clientY : e.clientY);
-            
             let dx = clientX - (rect.left + rect.width / 2);
             let dy = clientY - (rect.top + rect.height / 2);
-            
             this.x = Math.max(-this.limitX, Math.min(this.limitX, dx));
             this.y = Math.max(-this.limitY, Math.min(this.limitY, dy));
 
-            // Calcul 1:1 pour 174°
             const panAngle = Math.round(this.centerAngle + ((this.x / this.limitX) * this.maxRange));
             const tiltAngle = Math.round(this.centerAngle + ((-this.y / this.limitY) * this.maxRange));
 
             const now = Date.now();
-            if (now - this.lastSend > 100) { 
+            if (now - this.lastSend > 90) { 
                 this.sendCameraCommands(panAngle, tiltAngle); 
                 this.lastSend = now; 
             }
