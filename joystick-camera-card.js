@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.3.1 - Joystick Carré 1:1 - Bille concave avec bordure chromée
+// V1.3.2 - Joystick Carré 1:1 - Bille concave avec bordure chromée
 // =========================================================================
 
 import {
@@ -12,8 +12,8 @@ class JoystickCameraCard extends LitElement {
     
     setConfig(config) { 
         this.config = config; 
-        this.panEntity = config.pan_entity || 'number.camera_pan_175';
-        this.tiltEntity = config.tilt_entity || 'number.camera_tilt_175';
+        this.panEntity = config.pan_entity || 'number.camera_pan';
+        this.tiltEntity = config.tilt_entity || 'number.camera_tilt';
     }
 
     static get properties() {
