@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.2.8 - Joystick Carré 1:1 - Design Original - Plage 174° (Centre 87°)
+// V1.2.9 - Joystick Carré 1:1 - Design Original - Plage 174° (Centre 87°)
 // =========================================================================
 
 import {
@@ -111,4 +111,29 @@ class JoystickCameraCard extends LitElement {
             let dx = clientX - (rect.left + rect.width / 2);
             let dy = clientY - (rect.top + rect.height / 2);
             
-            this.x = Math.max(-
+            this.x = Math.max(-this.limitX, Math.min(this.limitX, dx));
+            this.y = Math.max(-this.limitY, Math.min(this.limitY, dy));
+
+            // Calcul 1:1 pour 174°
+            const panAngle = Math.round(this.centerAngle + ((this.x / this.limitX) * this.maxRange));
+            const tiltAngle = Math.round(this.centerAngle + ((-this.y / this.limitY) * this.maxRange));
+
+            const now = Date.now();
+            if (now - this.lastSend > 100) { 
+                this.sendCameraCommands(panAngle, tiltAngle); 
+                this.lastSend = now; 
+            }
+        };
+
+        h.addEventListener('mousedown', start); h.addEventListener('touchstart', start);
+        document.addEventListener('mousemove', move); document.addEventListener('touchmove', move);
+        document.addEventListener('mouseup', end); document.addEventListener('touchend', end);
+    }
+
+    sendCameraCommands(pan, tilt) {
+        if (!this.hass) return;
+        this.hass.callService('number', 'set_value', { entity_id: this.panEntity, value: pan });
+        this.hass.callService('number', 'set_value', { entity_id: this.tiltEntity, value: tilt });
+    }
+}
+customElements.define('joystick-camera-card', JoystickCameraCard);
