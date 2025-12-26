@@ -12,7 +12,7 @@ class JoystickCameraCard extends LitElement {
     
     setConfig(config) { 
         this.config = config; 
-        // Nom du noeud ESPHome dans Home Assistant (par défaut 'rover_heisenberg')
+        // On définit le nom par défaut si non précisé dans la carte
         this.deviceName = config.device_name || 'rover_heisenberg';
     }
 
@@ -27,16 +27,12 @@ class JoystickCameraCard extends LitElement {
 
     constructor() {
         super();
-        // Dimensions : Largeur réduite à 206px (-15%), Hauteur maintenue à 165px
         this.baseWidth = 206; 
         this.baseHeight = 165;
         this.handleSize = 72; 
         this.borderWidth = 4; 
-        
-        // Calcul des limites de mouvement (Contact Parfait)
         this.limitX = (this.baseWidth - (this.borderWidth * 2) - this.handleSize) / 2;
         this.limitY = (this.baseHeight - (this.borderWidth * 2) - this.handleSize) / 2;
-        
         this.x = 0;
         this.y = 0;
         this.isDragging = false;
@@ -45,10 +41,7 @@ class JoystickCameraCard extends LitElement {
 
     static get styles() {
         return css`
-            :host { 
-                display: block; 
-                background: none !important;
-            }
+            :host { display: block; background: none !important; }
             ha-card {
                 background: none !important;
                 border: none !important;
@@ -57,46 +50,23 @@ class JoystickCameraCard extends LitElement {
                 justify-content: flex-end;
                 align-items: center;
             }
-            .card-content { 
-                padding: 10px; 
-                display: flex; 
-                justify-content: flex-end; 
-                background: none;
-            }
+            .card-content { padding: 10px; display: flex; justify-content: flex-end; background: none; }
             .base {
-                width: 206px; 
-                height: 165px; 
-                border-radius: 40px; 
-                position: relative;
-                background: #000; 
-                border: 4px solid #333;
-                box-sizing: border-box;
-                /* Aspect Soufflet Pur */
+                width: 206px; height: 165px; border-radius: 40px; position: relative;
+                background: #000; border: 4px solid #333; box-sizing: border-box;
                 background-image: 
                     radial-gradient(circle, transparent 30%, rgba(0,0,0,0.8) 100%),
                     repeating-radial-gradient(circle at center, #222 0px, #222 10px, #0a0a0a 12px, #000 15px);
                 box-shadow: inset 0 0 30px rgba(0,0,0,1), inset 0 0 10px rgba(0,0,0,0.8);
-                touch-action: none;
-                display: flex; 
-                justify-content: center; 
-                align-items: center;
-                z-index: 1;
-                overflow: hidden;
+                touch-action: none; display: flex; justify-content: center; align-items: center;
+                z-index: 1; overflow: hidden;
             }
             .handle {
-                width: 72px; 
-                height: 72px; 
-                border-radius: 50%; 
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                margin-top: -36px;
-                margin-left: -36px;
+                width: 72px; height: 72px; border-radius: 50%; position: absolute;
+                top: 50%; left: 50%; margin-top: -36px; margin-left: -36px;
                 background: radial-gradient(circle at 50% 15%, #03a9f4 0%, #0288d1 60%, #01579b 100%);
                 box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 5px 10px rgba(0,0,0,0.5);
-                z-index: 999;
-                cursor: grab;
-                transition: transform 0.1s ease-out;
+                z-index: 999; cursor: grab; transition: transform 0.1s ease-out;
             }
         `;
     }
@@ -123,3 +93,44 @@ class JoystickCameraCard extends LitElement {
 
     _addListeners() {
         const h = this.handleElement;
+        const start = (e) => { e.preventDefault(); this.isDragging = true; h.style.transition = 'none'; };
+        const end = () => { 
+            if (!this.isDragging) return; 
+            this.isDragging = false;
+            h.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            this.x = 0; this.y = 0; 
+            this.sendCameraCommands(0, 0);
+        };
+
+        const move = (e) => {
+            if (!this.isDragging) return;
+            const rect = this.baseElement.getBoundingClientRect();
+            const clientX = (e.touches ? e.touches[0].clientX : e.clientX);
+            const clientY = (e.touches ? e.touches[0].clientY : e.clientY);
+            let dx = clientX - (rect.left + rect.width / 2);
+            let dy = clientY - (rect.top + rect.height / 2);
+            this.x = Math.max(-this.limitX, Math.min(this.limitX, dx));
+            this.y = Math.max(-this.limitY, Math.min(this.limitY, dy));
+            const panPerc = Math.round((this.x / this.limitX) * 100);
+            const tiltPerc = Math.round((-this.y / this.limitY) * 100);
+            const now = Date.now();
+            if (now - this.lastSend > 50) {
+                this.sendCameraCommands(panPerc, tiltPerc); 
+                this.lastSend = now; 
+            }
+        };
+
+        h.addEventListener('mousedown', start); h.addEventListener('touchstart', start);
+        document.addEventListener('mousemove', move); document.addEventListener('touchmove', move);
+        document.addEventListener('mouseup', end); document.addEventListener('touchend', end);
+    }
+
+    sendCameraCommands(pan, tilt) {
+        if (!this.hass) return;
+        this.hass.callService('esphome', `${this.deviceName}_control_camera`, {
+            pan_percent: pan,
+            tilt_percent: tilt
+        });
+    }
+}
+customElements.define('joystick-camera-card', JoystickCameraCard);
