@@ -129,18 +129,16 @@ class JoystickCameraCard extends LitElement {
 
     sendCameraCommands(pan, tilt) {
         if (!this.hass) return;
-
-        // On envoie la valeur au Number Pan
+    
+        // On transforme le -100/100 du joystick en 0/270 pour le servo série
+        const pan270 = Math.round(((pan + 100) / 200) * 270);
+    
         this.hass.callService('number', 'set_value', {
             entity_id: this.panEntity,
-            value: pan
+            value: pan270
         });
-
-        // On envoie la valeur au Number Tilt
-        this.hass.callService('number', 'set_value', {
-            entity_id: this.tiltEntity,
-            value: tilt
-        });
+        
+        // ... reste du code pour le tilt
     }
 }
 customElements.define('joystick-camera-card', JoystickCameraCard);
