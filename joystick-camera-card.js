@@ -1,5 +1,5 @@
 // =========================================================================
-// V1.1.6 - Joystick Pan & Tilt via Number Entities (Sans API dédiée)
+// V1.2.0 - Joystick Pan & Tilt via Number Entities (Sans API dédiée)
 // =========================================================================
 
 import {
@@ -130,15 +130,14 @@ class JoystickCameraCard extends LitElement {
     sendCameraCommands(pan, tilt) {
         if (!this.hass) return;
     
-        // On transforme le -100/100 du joystick en 0/270 pour le servo série
-        const pan270 = Math.round(((pan + 100) / 200) * 270);
+        // On envoie directement la valeur du joystick mappée sur 135
+        // pan (joystick) va de -100 à 100, on le multiplie par 1.35
+        const panAngle = Math.round(pan * 1.35);
     
         this.hass.callService('number', 'set_value', {
             entity_id: this.panEntity,
-            value: pan270
+            value: panAngle
         });
-        
-        // ... reste du code pour le tilt
     }
 }
 customElements.define('joystick-camera-card', JoystickCameraCard);
